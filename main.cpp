@@ -134,6 +134,7 @@ public:
     olc::vf2d vGalaxyOffset = {0, 0};
     bool bStarSelected{false};
     olc::vi2d vStarSelected{0, 0};
+    bool bPlanetSelect{false};
 
     bool OnUserCreate() override {
         return true;
@@ -223,10 +224,54 @@ public:
             }
 
             // Display information for a selected planet
-            if (GetKey(olc::NP1).bPressed) for (const auto &val: star.vPlanets[0].minerals) std::cout << val << " ";
+            if (GetKey(olc::K1).bHeld)
+                if (star.vPlanets.size() > 0)
+                    printPlanetInfo(star.vPlanets[0], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K2).bHeld)
+                if (star.vPlanets.size() > 1)
+                    printPlanetInfo(star.vPlanets[1], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K3).bHeld)
+                if (star.vPlanets.size() > 2)
+                    printPlanetInfo(star.vPlanets[2], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K4).bHeld)
+                if (star.vPlanets.size() > 3)
+                    printPlanetInfo(star.vPlanets[3], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K5).bHeld)
+                if (star.vPlanets.size() > 4)
+                    printPlanetInfo(star.vPlanets[4], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K6).bHeld)
+                if (star.vPlanets.size() > 5)
+                    printPlanetInfo(star.vPlanets[5], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K7).bHeld)
+                if (star.vPlanets.size() > 6)
+                    printPlanetInfo(star.vPlanets[6], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K8).bHeld)
+                if (star.vPlanets.size() > 7)
+                    printPlanetInfo(star.vPlanets[7], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K9).bHeld)
+                if (star.vPlanets.size() > 8)
+                    printPlanetInfo(star.vPlanets[8], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
         }
 
         return true;
+    }
+
+    void printPlanetInfo(const Planet &planet, const int offsetX, int offsetY) {
+        FillRect(PLANETS_WINDOW_X, PLANETS_WINDOW_Y - 150, PLANETS_WINDOW_W, 140, olc::DARK_BLUE);
+        DrawRect(PLANETS_WINDOW_X, PLANETS_WINDOW_Y - 150, PLANETS_WINDOW_W, 140, olc::WHITE);
+
+        std::stringstream stream;
+
+        stream << "Distance: " << planet.distance << "\nDiameter: " << planet.diameter
+        << "\nFlora: " << (planet.flora ? "Yes" : "No") << "\nMinerals: ";
+        for (const auto &mineral: planet.minerals) stream << mineral << " ";
+        stream << "\nWater: " << (planet.water ? "Yes" : "No") << "\nGasses: ";
+        for (const auto &gas: planet.gasses) stream << gas << " ";
+        stream << "\nTemperature: " << planet.temperature << " K"
+        << "\nPopulation: " << planet.population
+        << "\nRing: " << (planet.ring ? "Yes" : "No");
+
+        DrawString({offsetX, offsetY}, stream.str());
     }
 };
 
