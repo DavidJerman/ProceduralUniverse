@@ -17,7 +17,7 @@ constexpr uint32_t planetColorsARGB[8] = {
  */
 class Planet {
 public:
-    olc::Pixel color {0xffBb9910};
+    olc::Pixel color{0xffBb9910};
     double distance{0};
     double diameter{0};
     bool flora{false};
@@ -245,33 +245,24 @@ public:
             }
 
             // Display information for a selected planet
-            if (GetKey(olc::K1).bHeld)
-                if (!star.planets.empty())
-                    printPlanetInfo(star.planets[0], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K2).bHeld)
-                if (star.planets.size() > 1)
-                    printPlanetInfo(star.planets[1], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K3).bHeld)
-                if (star.planets.size() > 2)
-                    printPlanetInfo(star.planets[2], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K4).bHeld)
-                if (star.planets.size() > 3)
-                    printPlanetInfo(star.planets[3], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K5).bHeld)
-                if (star.planets.size() > 4)
-                    printPlanetInfo(star.planets[4], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K6).bHeld)
-                if (star.planets.size() > 5)
-                    printPlanetInfo(star.planets[5], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K7).bHeld)
-                if (star.planets.size() > 6)
-                    printPlanetInfo(star.planets[6], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K8).bHeld)
-                if (star.planets.size() > 7)
-                    printPlanetInfo(star.planets[7], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
-            if (GetKey(olc::K9).bHeld)
-                if (star.planets.size() > 8)
-                    printPlanetInfo(star.planets[8], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K1).bHeld && !star.planets.empty())
+                printPlanetInfo(star.planets[0], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K2).bHeld && star.planets.size() > 1)
+                printPlanetInfo(star.planets[1], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K3).bHeld && star.planets.size() > 2)
+                printPlanetInfo(star.planets[2], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K4).bHeld && star.planets.size() > 3)
+                printPlanetInfo(star.planets[3], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K5).bHeld && star.planets.size() > 4)
+                printPlanetInfo(star.planets[4], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K6).bHeld && star.planets.size() > 5)
+                printPlanetInfo(star.planets[5], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K7).bHeld && star.planets.size() > 6)
+                printPlanetInfo(star.planets[6], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K8).bHeld && star.planets.size() > 7)
+                printPlanetInfo(star.planets[7], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+            if (GetKey(olc::K9).bHeld && star.planets.size() > 8)
+                printPlanetInfo(star.planets[8], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
         }
 
         return true;
