@@ -3,12 +3,21 @@
 #include "olcPixelGameEngine.h"
 
 constexpr uint32_t starColorsARGB[8] = {
-        0xFFFFFFFF, 0xFFD9FFFF, 0XFFA3FFFF, 0xFFFFC8C8,
+        0xFFFFFFFF, 0xFFD9FFFF, 0xFFA3FFFF, 0xFFFFC8C8,
         0xFFFFCB9D, 0xFF9F9FFF, 0xFF415EFF, 0xFF28199D
 };
 
+constexpr uint32_t planetColorsARGB[8] = {
+        0xFF042d63, 0xFFf87936, 0xFFe1eff0, 0xFF13ee3f,
+        0xFFB9dec0, 0xFFDeb9dd, 0xFFDddeb9, 0xFFE87896
+};
+
+/**
+ * A planet with many properties
+ */
 class Planet {
 public:
+    olc::Pixel color {0xffBb9910};
     double distance{0};
     double diameter{0};
     bool flora{false};
@@ -18,17 +27,19 @@ public:
     double temperature{0};
     double population{0};
     bool ring = false;
-    std::vector<double> vMoons;
+    std::vector<double> moons;
 };
 
+/**
+ * Star system, that might contain planets
+ */
 class StarSystem {
 public:
     bool starExists = false;
     double starDiameter = 0.0f;
     olc::Pixel starColor = olc::WHITE;
-    std::vector<Planet> vPlanets;
-    std::vector<std::string> MINERALS{"Iron", "Aluminum", "Calcium", "Potassium", "Zinc", "Sodium", "Uranium",
-                                      "Magnesium", "Phosphorus", "Iodine"};
+    std::vector<Planet> planets;
+    std::vector<std::string> MINERALS{"Iron", "Aluminum", "Calcium", "Potassium", "Zinc", "Sodium", "Uranium"};
     std::vector<std::string> GASSES{"He", "O2", "N2", "H2", "CH4", "CO2"};
 
     StarSystem(uint32_t x, uint32_t y, bool GenerateFullSystem = false)
@@ -48,10 +59,14 @@ public:
         // Generate planet properties
         for (int i = 0; i < nPlanets; i++) {
             Planet p;
+
+            p.color = planetColorsARGB[rndInt(0, 8)];
+
             p.distance = dDistanceFromStar;
+
             dDistanceFromStar += rndDouble(20.0f, 200.0f);
+
             p.diameter = rndDouble(5.0f, 20.0f);
-            p.flora = (rndInt(0, 100) == 1);
 
             // Minerals
             auto numOfMinerals = rndInt(0, (int) MINERALS.size() - 1);
@@ -81,7 +96,11 @@ public:
                 numOfGasses--;
             }
 
-            p.temperature = rndInt(-200, 300);
+            p.temperature = rndInt(-273, 300);
+
+            // Have a possibility of fauna only if there is water and right temperature
+            if (p.water && p.temperature > 0 && p.temperature < 50)
+                p.flora = (rndInt(0, 2) == 1);
 
             p.population = std::max(rndInt(-10000000, 9000000), 0);
 
@@ -89,9 +108,9 @@ public:
 
             int nMoons = std::max(rndInt(-5, 5), 0);
             for (int n = 0; n < nMoons; n++) {
-                p.vMoons.push_back(rndDouble(1.0, 5.0));
+                p.moons.push_back(rndDouble(1.0, 5.0));
             }
-            vPlanets.push_back(p);
+            planets.push_back(p);
         }
     }
 
@@ -118,6 +137,9 @@ private:
     }
 };
 
+/**
+ * A galaxy containing many star systems
+ */
 class Galaxy : public olc::PixelGameEngine {
     static const int SECTOR_SIZE = 16;
 
@@ -131,20 +153,19 @@ public:
         sAppName = "Galaxy View";
     }
 
-    olc::vf2d vGalaxyOffset = {0, 0};
-    bool bStarSelected{false};
-    olc::vi2d vStarSelected{0, 0};
-    bool bPlanetSelect{false};
+    olc::vf2d galaxyOffset = {0, 0};
+    bool starSelected{false};
+    olc::vi2d selectedStarPosition{0, 0};
 
     bool OnUserCreate() override {
         return true;
     }
 
     bool OnUserUpdate(float fElapsedTime) override {
-        if (GetKey(olc::W).bHeld) vGalaxyOffset.y -= 50.0f * fElapsedTime;
-        if (GetKey(olc::S).bHeld) vGalaxyOffset.y += 50.0f * fElapsedTime;
-        if (GetKey(olc::A).bHeld) vGalaxyOffset.x -= 50.0f * fElapsedTime;
-        if (GetKey(olc::D).bHeld) vGalaxyOffset.x += 50.0f * fElapsedTime;
+        if (GetKey(olc::W).bHeld) galaxyOffset.y -= 50.0f * fElapsedTime;
+        if (GetKey(olc::S).bHeld) galaxyOffset.y += 50.0f * fElapsedTime;
+        if (GetKey(olc::A).bHeld) galaxyOffset.x -= 50.0f * fElapsedTime;
+        if (GetKey(olc::D).bHeld) galaxyOffset.x += 50.0f * fElapsedTime;
 
         Clear(olc::BLACK);
 
@@ -152,25 +173,25 @@ public:
         int nSectorY = ScreenHeight() / SECTOR_SIZE;
 
         olc::vi2d mouse = {GetMouseX() / SECTOR_SIZE, GetMouseY() / 16};
-        olc::vi2d galaxy_mouse = mouse + vGalaxyOffset;
+        olc::vi2d galaxyMouse = mouse + galaxyOffset;
 
-        olc::vi2d screen_sector = {0, 0};
+        olc::vi2d screenSector = {0, 0};
 
         // Draw each sector
-        for (screen_sector.x = 0; screen_sector.x < nSectorX; screen_sector.x++)
-            for (screen_sector.y = 0; screen_sector.y < nSectorY; screen_sector.y++) {
-                StarSystem star(screen_sector.x + (uint32_t) vGalaxyOffset.x,
-                                 screen_sector.y + (uint32_t) vGalaxyOffset.y);
+        for (screenSector.x = 0; screenSector.x < nSectorX; screenSector.x++)
+            for (screenSector.y = 0; screenSector.y < nSectorY; screenSector.y++) {
+                StarSystem star(screenSector.x + (uint32_t) galaxyOffset.x,
+                                screenSector.y + (uint32_t) galaxyOffset.y);
 
                 // If the star exists, draw it
                 if (star.starExists) {
-                    FillCircle(screen_sector.x * SECTOR_SIZE + SECTOR_SIZE / 2,
-                               screen_sector.y * SECTOR_SIZE + SECTOR_SIZE / 2,
+                    FillCircle(screenSector.x * SECTOR_SIZE + SECTOR_SIZE / 2,
+                               screenSector.y * SECTOR_SIZE + SECTOR_SIZE / 2,
                                (int) star.starDiameter / (SECTOR_SIZE / 2), star.starColor);
 
-                    if (mouse.x == screen_sector.x && mouse.y == screen_sector.y) {
-                        DrawCircle(screen_sector.x * SECTOR_SIZE + SECTOR_SIZE / 2,
-                                   screen_sector.y * SECTOR_SIZE + SECTOR_SIZE / 2,
+                    if (mouse.x == screenSector.x && mouse.y == screenSector.y) {
+                        DrawCircle(screenSector.x * SECTOR_SIZE + SECTOR_SIZE / 2,
+                                   screenSector.y * SECTOR_SIZE + SECTOR_SIZE / 2,
                                    12, olc::BLUE);
                     }
                 }
@@ -178,17 +199,17 @@ public:
 
         // If the planet is selected, draw the planets
         if (GetMouse(0).bPressed) {
-            StarSystem star(galaxy_mouse.x, galaxy_mouse.y);
+            StarSystem star(galaxyMouse.x, galaxyMouse.y);
 
             if (star.starExists) {
-                bStarSelected = true;
-                vStarSelected = galaxy_mouse;
+                starSelected = true;
+                selectedStarPosition = galaxyMouse;
             } else
-                bStarSelected = false;
+                starSelected = false;
         }
 
-        if (bStarSelected) {
-            StarSystem star(vStarSelected.x, vStarSelected.y, true);
+        if (starSelected) {
+            StarSystem star(selectedStarPosition.x, selectedStarPosition.y, true);
 
             // Windows
             FillRect(PLANETS_WINDOW_X, PLANETS_WINDOW_Y, PLANETS_WINDOW_W, PLANETS_WINDOW_H, olc::DARK_BLUE);
@@ -197,81 +218,83 @@ public:
             const double RATIO = 1.375;
 
             // Star
-            olc::vi2d vBody = {14, 356};
-            vBody.x += star.starDiameter * RATIO;
-            FillCircle(vBody, (int) (star.starDiameter * RATIO), star.starColor);
-            vBody.x += (int) (star.starDiameter * RATIO) + 8;
+            olc::vi2d bodyPosition = {14, 356};
+            bodyPosition.x += (int) (star.starDiameter * RATIO);
+            FillCircle(bodyPosition, (int) (star.starDiameter * RATIO), star.starColor);
+            bodyPosition.x += (int) (star.starDiameter * RATIO) + 8;
 
             // Draw planets
-            for (const auto &planet: star.vPlanets) {
-                if (vBody.x + planet.diameter >= PLANETS_WINDOW_W - 20) break;
+            for (const auto &planet: star.planets) {
+                if (bodyPosition.x + planet.diameter >= PLANETS_WINDOW_W - 20) break;
 
-                vBody.x += planet.diameter;
-                FillCircle(vBody, (int) (planet.diameter * 1.0), olc::RED);
+                bodyPosition.x += (int) planet.diameter;
+                FillCircle(bodyPosition, (int) (planet.diameter * 1.0), planet.color);
 
-                olc::vi2d vMoon = vBody;
-                vMoon.y += planet.diameter + 10;
+                olc::vi2d moonPosition = bodyPosition;
+                moonPosition.y += (int) planet.diameter + 10;
 
                 // Draw moons
-                for (const auto &moon: planet.vMoons) {
-                    if (vMoon.y >= 450) break;
-                    vMoon.y += moon;
-                    FillCircle(vMoon, (int) (moon * 1.0), olc::GREY);
-                    vMoon.y += moon + 10;
+                for (const auto &moon: planet.moons) {
+                    if (moonPosition.y >= 450) break;
+                    moonPosition.y += (int) moon;
+                    FillCircle(moonPosition, (int) (moon * 1.0), olc::GREY);
+                    moonPosition.y += (int) moon + 10;
                 }
 
-                vBody.x += planet.diameter + 8;
+                bodyPosition.x += (int) planet.diameter + 8;
             }
 
             // Display information for a selected planet
             if (GetKey(olc::K1).bHeld)
-                if (star.vPlanets.size() > 0)
-                    printPlanetInfo(star.vPlanets[0], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (!star.planets.empty())
+                    printPlanetInfo(star.planets[0], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K2).bHeld)
-                if (star.vPlanets.size() > 1)
-                    printPlanetInfo(star.vPlanets[1], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 1)
+                    printPlanetInfo(star.planets[1], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K3).bHeld)
-                if (star.vPlanets.size() > 2)
-                    printPlanetInfo(star.vPlanets[2], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 2)
+                    printPlanetInfo(star.planets[2], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K4).bHeld)
-                if (star.vPlanets.size() > 3)
-                    printPlanetInfo(star.vPlanets[3], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 3)
+                    printPlanetInfo(star.planets[3], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K5).bHeld)
-                if (star.vPlanets.size() > 4)
-                    printPlanetInfo(star.vPlanets[4], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 4)
+                    printPlanetInfo(star.planets[4], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K6).bHeld)
-                if (star.vPlanets.size() > 5)
-                    printPlanetInfo(star.vPlanets[5], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 5)
+                    printPlanetInfo(star.planets[5], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K7).bHeld)
-                if (star.vPlanets.size() > 6)
-                    printPlanetInfo(star.vPlanets[6], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 6)
+                    printPlanetInfo(star.planets[6], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K8).bHeld)
-                if (star.vPlanets.size() > 7)
-                    printPlanetInfo(star.vPlanets[7], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 7)
+                    printPlanetInfo(star.planets[7], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
             if (GetKey(olc::K9).bHeld)
-                if (star.vPlanets.size() > 8)
-                    printPlanetInfo(star.vPlanets[8], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
+                if (star.planets.size() > 8)
+                    printPlanetInfo(star.planets[8], PLANETS_WINDOW_X + 10, PLANETS_WINDOW_Y - 140);
         }
 
         return true;
     }
 
     void printPlanetInfo(const Planet &planet, const int offsetX, int offsetY) {
-        FillRect(PLANETS_WINDOW_X, PLANETS_WINDOW_Y - 150, PLANETS_WINDOW_W, 140, olc::DARK_BLUE);
-        DrawRect(PLANETS_WINDOW_X, PLANETS_WINDOW_Y - 150, PLANETS_WINDOW_W, 140, olc::WHITE);
+        FillRect(PLANETS_WINDOW_X, offsetY - 10 + 40, PLANETS_WINDOW_W, 100, olc::DARK_BLUE);
+        DrawRect(PLANETS_WINDOW_X, offsetY - 10 + 40, PLANETS_WINDOW_W, 100, olc::WHITE);
 
         std::stringstream stream;
 
-        stream << "Distance: " << planet.distance << "\nDiameter: " << planet.diameter
-        << "\nFlora: " << (planet.flora ? "Yes" : "No") << "\nMinerals: ";
-        for (const auto &mineral: planet.minerals) stream << mineral << " ";
+        stream << "Distance from sun: " << planet.distance << " u" << "\nDiameter: " << planet.diameter << " u"
+               << "\nFlora: " << (planet.flora ? "Yes" : "No") << "\nMinerals: ";
+        if (planet.minerals.empty()) stream << "None";
+        else for (const auto &mineral: planet.minerals) stream << mineral << " ";
         stream << "\nWater: " << (planet.water ? "Yes" : "No") << "\nGasses: ";
-        for (const auto &gas: planet.gasses) stream << gas << " ";
-        stream << "\nTemperature: " << planet.temperature << " K"
-        << "\nPopulation: " << planet.population
-        << "\nRing: " << (planet.ring ? "Yes" : "No");
+        if (planet.gasses.empty()) stream << "None";
+        else for (const auto &gas: planet.gasses) stream << gas << " ";
+        stream << "\nTemperature: " << planet.temperature << " C"
+               << "\nPopulation: " << planet.population
+               << "\nRing: " << (planet.ring ? "Yes" : "No");
 
-        DrawString({offsetX, offsetY}, stream.str());
+        DrawString({offsetX, offsetY + 40}, stream.str());
     }
 };
 
